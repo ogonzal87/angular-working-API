@@ -4,7 +4,8 @@ var app = angular.module('codecraft', [
 	'infinite-scroll',
 	'angularSpinner',
 	'jcs-autoValidate',
-	'angular-ladda'
+	'angular-ladda',
+	'mgcrea.ngStrap'
 ]);
 
 app.config(function($httpProvider, $resourceProvider, laddaProvider) {
@@ -21,6 +22,11 @@ app.controller('PersonDetailController', function ($scope, ContactService) {
 	$scope.save = function() {
 		$scope.contacts.updateContact($scope.contacts.selectedPerson);
 	};
+
+	$scope.remove = function() {
+		$scope.contacts.revomeContact($scope.contacts.selectedPerson);
+	};
+
 });
 
 app.factory('Contact', function($resource) {
@@ -31,12 +37,24 @@ app.factory('Contact', function($resource) {
 	});
 });
 
-app.controller('PersonListController', function ($scope, ContactService) {
+app.controller('PersonListController', function ($scope, $modal, ContactService) {
 	$scope.search = "";
 	$scope.order = "email";
 	$scope.contacts = ContactService;
 
+	$scope.showCreateModal = function() {
+		$scope.contacts.selectedPerson = {};
+		$scope.createModal = $modal({
+			scope: $scope,
+			template: 'templates/modal.create.tpl.html',
+			show: true
+		});
+	};
 
+	$scope.createContact = function() {
+		console.log("Contact was created");
+		$scope.contacts.createContact($scope.contacts.selectedPerson);
+	};
 
 	$scope.loadMore = function() {
 		console.log('Loading....');
@@ -117,6 +135,22 @@ app.service('ContactService', function (Contact) {
 			console.log("Service Updated");
 			self.isSaving = true;
 			person.$update().then(function() {
+				self.isSaving = false;
+			});
+		},
+		'revomeContact': function(person) {
+			self.isDeleting = true;
+			person.$remove().then(function() {
+				self.isDeleting = false;
+				var index = self.persons.indexOf(person);
+				self.persons.splice(index, 1);
+				self.selectedPerson = null;
+			});
+		},
+		'createContact': function(person) {
+			console.log("Service Updated");
+			self.isSaving = true;
+			Contact.save(person).$promise.then(function() {
 				self.isSaving = false;
 			});
 		}
