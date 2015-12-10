@@ -8,11 +8,15 @@ var app = angular.module('codecraft', [
 	'mgcrea.ngStrap'
 ]);
 
-app.config(function($httpProvider, $resourceProvider, laddaProvider) {
+app.config(function($httpProvider, $resourceProvider, laddaProvider, $datepickerProvider) {
 	$httpProvider.defaults.headers.common['Authorization'] = 'Token 76e3d573ed011723ab9b9def8656de498a31b365';
 	$resourceProvider.defaults.stripTrailingSlashes = false;
 	laddaProvider.setOption({
 		style: 'expand-right'
+	});
+	angular.extend($datepickerProvider.defaults, {
+		dateFormat: 'd/M/yyyy',
+		autoclose: true
 	});
 });
 
@@ -53,7 +57,9 @@ app.controller('PersonListController', function ($scope, $modal, ContactService)
 
 	$scope.createContact = function() {
 		console.log("Contact was created");
-		$scope.contacts.createContact($scope.contacts.selectedPerson);
+		$scope.contacts.createContact($scope.contacts.selectedPerson).then(function() {
+			$scope.createModal.hide();
+		});
 	};
 
 	$scope.loadMore = function() {
@@ -75,7 +81,7 @@ app.controller('PersonListController', function ($scope, $modal, ContactService)
 
 });
 
-app.service('ContactService', function (Contact) {
+app.service('ContactService', function (Contact, $q) {
 
 	var self = {
 		'page': 1,
@@ -148,11 +154,18 @@ app.service('ContactService', function (Contact) {
 			});
 		},
 		'createContact': function(person) {
-			console.log("Service Updated");
+			var d = $q.defer();
 			self.isSaving = true;
 			Contact.save(person).$promise.then(function() {
 				self.isSaving = false;
+				self.selectedPerson = null;
+				self.hasMore = null;
+				self.page = 1;
+				self.persons = [];
+				self.loadContacts();
+				d.resolve();
 			});
+			return d.promise;
 		}
 
 	};
