@@ -5,7 +5,9 @@ var app = angular.module('codecraft', [
 	'angularSpinner',
 	'jcs-autoValidate',
 	'angular-ladda',
-	'mgcrea.ngStrap'
+	'mgcrea.ngStrap',
+	'toaster',
+	'ngAnimate'
 ]);
 
 app.config(function($httpProvider, $resourceProvider, laddaProvider, $datepickerProvider) {
@@ -31,6 +33,19 @@ app.controller('PersonDetailController', function ($scope, ContactService) {
 		$scope.contacts.revomeContact($scope.contacts.selectedPerson);
 	};
 
+});
+
+app.filter('defaultImage', function() {
+	return function(input, param) {
+		console.log(input);
+		console.log(param);
+
+		if (!input) {
+			return param;
+		} else {
+			return input;
+		}
+	};
 });
 
 app.factory('Contact', function($resource) {
@@ -81,7 +96,7 @@ app.controller('PersonListController', function ($scope, $modal, ContactService)
 
 });
 
-app.service('ContactService', function (Contact, $q) {
+app.service('ContactService', function (Contact, $q, toaster) {
 
 	var self = {
 		'page': 1,
@@ -142,6 +157,7 @@ app.service('ContactService', function (Contact, $q) {
 			self.isSaving = true;
 			person.$update().then(function() {
 				self.isSaving = false;
+				toaster.pop('success', 'Updated ' + person.name);
 			});
 		},
 		'revomeContact': function(person) {
@@ -151,6 +167,7 @@ app.service('ContactService', function (Contact, $q) {
 				var index = self.persons.indexOf(person);
 				self.persons.splice(index, 1);
 				self.selectedPerson = null;
+				toaster.pop('success', 'Deleted ' + person.name);
 			});
 		},
 		'createContact': function(person) {
@@ -163,6 +180,7 @@ app.service('ContactService', function (Contact, $q) {
 				self.page = 1;
 				self.persons = [];
 				self.loadContacts();
+				toaster.pop('success', 'Created ' + person.name);
 				d.resolve();
 			});
 			return d.promise;
